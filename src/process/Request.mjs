@@ -15,6 +15,13 @@ export async function Request($request) {
     let $response = undefined;
     // 解构URL
     const url = new URL($request.url);
+    // iOS 27 WK3: negotiate Apple's JSON representation for the main Weather app only,
+    // so the native JSON reader path matches the Loon rewrite. Background clients
+    // (weatherd, widgets) keep Apple's original FlatBuffer transport.
+    if (url.hostname === "weatherkit.apple.com" && /^\/api\/v3\/weather\//.test(url.pathname) && $request.method === "GET" && /^WeatherKit_Weather_(iOS|macOS)_/.test($request.headers?.["User-Agent"] ?? "")) {
+        $request.headers = { ...$request.headers, Accept: "application/json" };
+        return { $request };
+    }
     Console.info("WeatherKit request");
     // 解析格式
     const FORMAT = ($request.headers?.["Content-Type"] ?? $request.headers?.["content-type"])?.split(";")?.[0];

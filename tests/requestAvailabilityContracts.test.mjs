@@ -114,6 +114,21 @@ test("request preserves WeatherKit dataSets independently of the response proces
     }
 });
 
+test("request negotiates Apple's v3 JSON only for the main Weather app", async () => {
+    const url = "https://weatherkit.apple.com/api/v3/weather/en-US/22.5431/114.0579?country=CN&dataSets=currentWeather";
+    for (const handler of [Request, RequestDev]) {
+        const { $request } = await handler({ headers: { "User-Agent": "WeatherKit_Weather_iOS_27.3" }, method: "GET", url });
+        assert.equal($request.headers.Accept, "application/json");
+        assert.equal($request.url, url);
+        const { $request: background } = await handler({ headers: { "User-Agent": "weatherd/1.0" }, method: "GET", url });
+        assert.equal(background.headers.Accept, undefined);
+    }
+    const { $request: posted } = await Request({ headers: { "User-Agent": "WeatherKit_Weather_iOS_27.3" }, method: "POST", url });
+    assert.equal(posted.headers.Accept, undefined);
+    const { $request: v2 } = await Request({ headers: { "User-Agent": "WeatherKit_Weather_iOS_27.3" }, method: "GET", url: "https://weatherkit.apple.com/api/v2/weather/en-US/22.5/114.1?dataSets=currentWeather" });
+    assert.equal(v2.headers.Accept, undefined);
+});
+
 test("request strips numeric versions from every air-quality scale", async () => {
     const cases = [
         ["CA.AQHI.2414", "CA.AQHI"],

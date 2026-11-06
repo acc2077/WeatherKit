@@ -129,6 +129,19 @@ test("Stash weather-alert requests declare the required request type", async () 
     }
 });
 
+test("Stash negotiates and processes v3 weather for the main Weather app", async () => {
+    const requestEntry = /    - match: \^https\?:\\\/\\\/weatherkit\\\.apple\\\.com\\\/api\\\/v3\\\/weather\\\/\n      name: WeatherKit\.api\.v3\.weather\.request\n      type: request\n      argument:\n/g;
+    const responseEntry = /    - match: \^https\?:\\\/\\\/weatherkit\\\.apple\\\.com\\\/api\\\/v3\\\/weather\\\/\n      name: WeatherKit\.api\.v3\.weather\.response\n      type: response\n      require-body: true\n      max-size: 1048576\n      argument:\n/g;
+
+    for (const filename of ["stash.handlebars", "stash.dev.handlebars"]) {
+        const content = (await readFile(new URL(`../template/${filename}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
+        assert.equal(content.match(requestEntry)?.length, 1, filename);
+        assert.equal(content.match(responseEntry)?.length, 1, filename);
+        assert.match(content, /WeatherKit\.api\.v3\.weather\.request:\n    url: [^\n]+request(\.dev)?\.bundle\.js/, filename);
+        assert.match(content, /WeatherKit\.api\.v3\.weather\.response:\n    url: [^\n]+response(\.dev)?\.bundle\.js/, filename);
+    }
+});
+
 test("Rewrite templates stay aligned with fixed Rewrite modules", async () => {
 	const fixedTemplates = ["loon.rewrite.handlebars", "stash.rewrite.handlebars"];
 	for (const filename of rewriteTemplates) {
