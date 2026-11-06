@@ -41,6 +41,24 @@ test("native Weather JSON uses string conditions and scalar amounts, including u
     assert.equal(result.headers["Cache-Control"], "no-store");
 });
 
+test("periodic-only native responses are normalized before returning", async () => {
+    settings({ DataSets: "currentWeather", "Weather.Provider": "WeatherKit" });
+    const body = {
+        forecastPeriodic: { metadata: metadata(), forecasts: [{ periods: [{ conditionCode: ["RAIN"], precipitationAmountByType: [{ expected: 1, minimum: 0, maximum: 2, precipitationType: ["RAIN"] }] }] }] },
+    };
+    const result = await ResponseJSONV3(request("forecastPeriodic"), response(body), {});
+    const actual = JSON.parse(result.body);
+    assert.equal(actual.forecastPeriodic.forecasts[0].periods[0].conditionCode, "RAIN");
+    assert.equal(actual.forecastPeriodic.forecasts[0].periods[0].precipitationAmount, 1);
+});
+
+test("weatherChanges-only native responses are normalized without requiring metadata", async () => {
+    settings({ DataSets: "currentWeather", "Weather.Provider": "WeatherKit" });
+    const body = { weatherChanges: { changes: [{ conditionCode: ["SNOW"] }] } };
+    const result = await ResponseJSONV3(request("weatherChanges"), response(body), {});
+    assert.equal(JSON.parse(result.body).weatherChanges.changes[0].conditionCode, "SNOW");
+});
+
 test("native JSON adaptation preserves existing totals and condition-record vectors and is idempotent", () => {
     const product = { precipitationAmount: 9, precipitationAmountByType: [{ expected: 4 }], condition: [{ beginCondition: "CLEAR", endCondition: "RAIN" }], summary: [{ condition: ["RAIN"] }] };
     assert.equal(adaptV3ClientProduct(product), true);

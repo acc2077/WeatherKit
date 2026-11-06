@@ -98,6 +98,38 @@ for (const [name, processResponse] of [
                 QWeather.prototype.WeatherAlertWeb = savedWeb;
             }
         });
+
+    test(`${name}: alerts keep Apple's unavailable state when no provider warnings are installed`, async () => {
+        const raw = fixtures.unavailableAlertsFixture(),
+            originalBytes = raw.slice();
+        const savedWeb = QWeather.prototype.WeatherAlertWeb;
+        QWeather.prototype.WeatherAlertWeb = async () => ({ metadata: { providerName: "Fixture", temporarilyUnavailable: false }, alerts: [{ areaId: "0", description: "Fetched warning", responses: [], guidelines: [] }] });
+        try {
+            const result = await processResponse(request("weatherAlerts"), response(raw));
+            const alerts = WeatherKit2.decode(new ByteBuffer(result.body), ["weatherAlerts"]).weatherAlerts;
+            assert.equal(alerts.metadata.temporarilyUnavailable, true);
+            assert.equal(alerts.alerts.length, 0);
+            assert.deepEqual(raw, originalBytes);
+        } finally {
+            QWeather.prototype.WeatherAlertWeb = savedWeb;
+        }
+    });
+
+    test(`${name}: alerts stay available when Apple has no rows and provider warnings cannot be installed`, async () => {
+        const raw = fixtures.weatherFixture(0, 0),
+            originalBytes = raw.slice();
+        const savedWeb = QWeather.prototype.WeatherAlertWeb;
+        QWeather.prototype.WeatherAlertWeb = async () => ({ metadata: { providerName: "Fixture", temporarilyUnavailable: false }, alerts: [{ areaId: "0", description: "Fetched warning", responses: [], guidelines: [] }] });
+        try {
+            const result = await processResponse(request("weatherAlerts"), response(raw));
+            const alerts = WeatherKit2.decode(new ByteBuffer(result.body), ["weatherAlerts"]).weatherAlerts;
+            assert.equal(alerts.metadata.temporarilyUnavailable, false);
+            assert.equal(alerts.alerts.length, 0);
+            assert.deepEqual(raw, originalBytes);
+        } finally {
+            QWeather.prototype.WeatherAlertWeb = savedWeb;
+        }
+    });
 }
 
 test("alert decode uses one schema view per record and preserves the full decoded payload", () => {

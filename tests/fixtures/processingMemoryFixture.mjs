@@ -36,6 +36,16 @@ export function weatherFixture(hours = 273, alerts = 4) {
     });
 }
 
+export function unavailableAlertsFixture() {
+    return WeatherKit2.encode(undefined, {
+        weatherAlerts: {
+            metadata: { providerName: "Apple", temporarilyUnavailable: true },
+            detailsUrl: "https://weatherkit.apple.com/alertDetails/index.html?ids=32.39,119.499",
+            alerts: [],
+        },
+    });
+}
+
 export const futureHourlyText = "future-hourly-field-must-survive";
 export function futureHourlyFixture() {
     const builder = new Builder();

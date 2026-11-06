@@ -2,11 +2,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import vm from "node:vm";
+import { fileURLToPath } from "node:url";
 import { rollup } from "rollup";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 
 test("browser bundle works with Loon callbacks and storage, without Node, WebCrypto or TextEncoder", async () => {
-    const bundle = await rollup({ input: new URL("./fixtures/cacheRuntimeEntry.mjs", import.meta.url).pathname, plugins: [nodeResolve({ browser: true })] });
+    const bundle = await rollup({ input: fileURLToPath(new URL("./fixtures/cacheRuntimeEntry.mjs", import.meta.url)), plugins: [nodeResolve({ browser: true })] });
     const { output } = await bundle.generate({ format: "iife", name: "CacheTestRuntime" });
     await bundle.close();
     const code = output[0].code;

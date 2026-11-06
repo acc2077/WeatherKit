@@ -83,7 +83,7 @@ test("WeatherAlerts hooks accept QWeather location and API coordinate ids after 
 });
 
 test("Egern keeps the API hook without QWeather page redirects", async () => {
-    const content = await readFile(new URL("iRingo.WeatherKit.Rewrite.yaml", modulesDirectory), "utf8");
+    const content = (await readFile(new URL("iRingo.WeatherKit.Rewrite.yaml", modulesDirectory), "utf8")).replace(/\r\n/g, "\n");
     assert.match(content, /match: \^https\?:\\\/\\\/weatherkit\\\.apple\\\.com\\\/api\\\/v1\\\/weatherAlerts\\\?\([\s\S]*?location: https:\/\/\{\{\{endpoint\}\}\}\/api\/v1\/weatherAlerts\?\$1\nmitm:/);
 });
 
@@ -124,7 +124,7 @@ test("Stash weather-alert requests declare the required request type", async () 
     const requestEntry = /    - match: [^\n]*weatherAlerts[^\n]*\n      name: WeatherKit\.api\.v1\.weatherAlerts\.request\n      type: request\n/g;
 
     for (const filename of ["stash.handlebars", "stash.dev.handlebars"]) {
-        const content = await readFile(new URL(`../template/${filename}`, import.meta.url), "utf8");
+        const content = (await readFile(new URL(`../template/${filename}`, import.meta.url), "utf8")).replace(/\r\n/g, "\n");
         assert.equal(content.match(requestEntry)?.length, 2, filename);
     }
 });

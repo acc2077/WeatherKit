@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 
 export function readLoonRules(plugin) {
-    const lines = plugin.split("\n");
+    const lines = plugin.replace(/\r\n/g, "\n").split("\n");
     const availability = lines.find(line => line.startsWith("response if ") && line.includes("response.json.jq("));
     const scale = lines.find(line => line.startsWith("request if ") && line.includes("url.replace("));
     const jsonTransport = lines.find(line => line.startsWith("request if ") && line.includes('request.header.set("Accept", "application/json")'));

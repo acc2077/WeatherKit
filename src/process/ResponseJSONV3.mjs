@@ -13,6 +13,8 @@ import { MAX_DECODED_VECTOR_ENTRIES, MAX_WEATHER_BODY_BYTES } from "../function/
 
 export const MAX_WEATHER_JSON_CHARACTERS = 1024 * 1024;
 const productNames = ["airQuality", "currentWeather", "forecastDaily", "forecastHourly", "forecastNextHour", "weatherAlerts"];
+// Normalized for the native JSON reader but never provider-replacement targets.
+const compatibilityProductNames = ["forecastPeriodic", "weatherChanges"];
 const providerMethods = new Set(["WeatherNow", "CurrentWeather", "Hourly", "ForecastHourly", "Daily", "Minutely", "WeatherAlert", "WeatherAlertWeb"]);
 const object = value => value !== null && typeof value === "object" && !Array.isArray(value);
 // WK3's FlatBuffer JSON and Weather's JSON reader have different shapes.
@@ -192,9 +194,9 @@ export default async function ResponseJSONV3(request, response, injectors) {
     if (!parameters.version || parameters.latitude === undefined || parameters.longitude === undefined || !Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return response;
     let body;
     try { body = JSON.parse(raw); } catch { return response; }
-    if (!object(body) || !productNames.some(name => object(body[name]) && object(body[name].metadata))) return response;
+    if (!object(body) || !(productNames.some(name => object(body[name]) && object(body[name].metadata)) || compatibilityProductNames.some(name => object(body[name])))) return response;
     let modified = false;
-    for (const name of [...productNames, "forecastPeriodic", "weatherChanges"]) {
+    for (const name of [...productNames, ...compatibilityProductNames]) {
         if (!object(body[name])) continue;
         try { modified = adaptV3ClientProduct(body[name]) || modified; } catch { /* Keep products beyond processing bounds. */ }
     }

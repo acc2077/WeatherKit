@@ -462,9 +462,14 @@ async function InjectWeatherAlerts(weatherAlerts, Settings, enviroments) {
     if (providerProductAvailable(newWeatherAlerts)) {
         // Only copy when a usable provider result will mutate the Apple data.
         weatherAlerts = cloneWeatherProduct(weatherAlerts) ?? {};
+        const alerts = WeatherAlerts.mergeAlerts(weatherAlerts?.alerts, activeProviderAlerts(newWeatherAlerts?.alerts));
+        // mergeAlerts never adds rows, so Apple's unavailable state must win
+        // unless provider warnings were actually installed.
+        const preserveUnavailable = weatherAlerts?.metadata?.temporarilyUnavailable === true && !alerts?.length;
         weatherAlerts.metadata = { ...weatherAlerts?.metadata, ...newWeatherAlerts.metadata };
+        if (preserveUnavailable) weatherAlerts.metadata.temporarilyUnavailable = true;
         weatherAlerts.detailsUrl = newWeatherAlerts.detailsUrl ?? weatherAlerts.detailsUrl;
-        weatherAlerts.alerts = WeatherAlerts.mergeAlerts(weatherAlerts?.alerts, activeProviderAlerts(newWeatherAlerts?.alerts));
+        weatherAlerts.alerts = alerts;
         weatherAlerts.metadata.providerLogo ||= providerNameToLogo(weatherAlerts.metadata.providerName);
     }
     if (Settings?.WeatherAlerts?.Provider !== "WeatherKit" && !providerProductAvailable(newWeatherAlerts)) enviroments.requestCache?.noteFallback("weatherAlerts");
